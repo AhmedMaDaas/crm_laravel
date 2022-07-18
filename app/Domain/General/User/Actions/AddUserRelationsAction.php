@@ -15,11 +15,11 @@ class AddUserRelationsAction
 
 	public static function execute($request, $userId){
 		Self::$userId = $userId;
-		$coordinates = Self::addCoordinates();
+		// $coordinates = Self::addCoordinates();
 		$firebaseToken = Self::addFirebaseToken($request->fcm_token);
 
 		$data = [
-			'coordinates' => $coordinates,
+			// 'coordinates' => $coordinates,
 			'firebaseToken' => $firebaseToken,
 		];
 		return $data;
