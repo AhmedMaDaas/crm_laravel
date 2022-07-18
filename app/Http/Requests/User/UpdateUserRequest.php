@@ -5,6 +5,8 @@ namespace App\Http\Requests\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
+use App\Exceptions\RequestException;
+
 class UpdateUserRequest extends FormRequest
 {
     /**
@@ -34,5 +36,10 @@ class UpdateUserRequest extends FormRequest
             'role_id' => 'nullable|string',
             'avatar' => 'nullable',
         ];
+    }
+
+    public function failedAuthorization()
+    {
+        throw new RequestException($message = "Unauthorized", $detailed_error = null , $code = 403);
     }
 }

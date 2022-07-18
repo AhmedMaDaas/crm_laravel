@@ -5,6 +5,8 @@ namespace App\Http\Requests\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
+use App\Exceptions\RequestException;
+
 class CreateProductRequest extends FormRequest
 {
     /**
@@ -30,5 +32,10 @@ class CreateProductRequest extends FormRequest
             'user_id' => 'required|integer:exists:users,id',
             'image' => 'required',
         ];
+    }
+
+    public function failedAuthorization()
+    {
+        throw new RequestException($message = "Unauthorized", $detailed_error = null , $code = 403);
     }
 }
