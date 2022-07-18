@@ -5,6 +5,8 @@ namespace App\Http\Requests\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
+use App\Rules\StringOrImage;
+
 use App\Exceptions\RequestException;
 
 class CreateProductRequest extends FormRequest
@@ -30,7 +32,7 @@ class CreateProductRequest extends FormRequest
             'name' => 'required|string',
             'description' => 'required|string',
             'user_id' => 'required|integer:exists:users,id',
-            'image' => 'required',
+            'image' => ['required', new StringOrImage],
         ];
     }
 

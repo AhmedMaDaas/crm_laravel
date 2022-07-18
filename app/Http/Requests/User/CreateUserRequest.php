@@ -5,6 +5,8 @@ namespace App\Http\Requests\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
+use App\Rules\StringOrImage;
+
 use App\Exceptions\RequestException;
 
 class CreateUserRequest extends FormRequest
@@ -33,7 +35,7 @@ class CreateUserRequest extends FormRequest
             'phone' => 'required_without:email|nullable|string|unique:users,phone,null,id',
             'password' => 'required|string',
             'role_id' => 'required|integer|exists:roles,id',
-            'avatar' => 'nullable',
+            'avatar' => ['nullable', new StringOrImage],
         ];
     }
 

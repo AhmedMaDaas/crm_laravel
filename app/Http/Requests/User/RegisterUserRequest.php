@@ -3,6 +3,7 @@
 namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\StringOrImage;
 
 class RegisterUserRequest extends FormRequest
 {
@@ -26,7 +27,7 @@ class RegisterUserRequest extends FormRequest
         return [
             'first_name' => 'string|required|min:2',
             'last_name' => 'string|required|min:2',
-            'avatar' => 'nullable',
+            'avatar' => ['nullable', new StringOrImage],
             'email' => 'required_without:phone|nullable|email|unique:users,email,null,id',
             'phone' => 'required_without:email|nullable|string|unique:users,phone,null,id',
             'password' => 'required|min:6|confirmed',

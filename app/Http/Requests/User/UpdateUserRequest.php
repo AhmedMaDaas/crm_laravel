@@ -5,6 +5,8 @@ namespace App\Http\Requests\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
+use App\Rules\StringOrImage;
+
 use App\Exceptions\RequestException;
 
 class UpdateUserRequest extends FormRequest
@@ -34,7 +36,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => 'required_without:email|nullable|string|unique:users,phone,' . $this->id . ',id',
             'password' => 'nullable|string',
             'role_id' => 'nullable|string',
-            'avatar' => 'nullable',
+            'avatar' => ['nullable', new StringOrImage],
         ];
     }
 
