@@ -5,6 +5,7 @@ namespace App\Rules;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class StringOrImage implements Rule
 {
@@ -29,7 +30,16 @@ class StringOrImage implements Rule
     {
         $fileArray = ['image' => $value];
         $rules = ['image' => 'image'];
-        return is_string($value) || (($value instanceof UploadedFile) && !(Validator::make($fileArray, $rules)->fails()));
+        return (is_string($value) && $this->checkFileExists($value)) || (($value instanceof UploadedFile) && !(Validator::make($fileArray, $rules)->fails()));
+    }
+
+    private function checkFileExists($path){
+        if(str_starts_with($path, 'http') && !str_starts_with($path, url('/'))) return true;
+        if(str_starts_with($path, url('/'))){
+           $path = str_replace(url('/'), '', $path);
+           return file_exists(public_path($path));
+        }
+        return false;
     }
 
     /**
@@ -39,6 +49,6 @@ class StringOrImage implements Rule
      */
     public function message()
     {
-        return 'The :attribute must either be a string or Image.';
+        return 'The :attribute must either be a valid link or Image.';
     }
 }
