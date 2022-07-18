@@ -60,7 +60,7 @@ class User extends Authenticatable
     }
 
     public function role(){
-        return $this->belongsTo('App\Domain\General\Role\Model\Role');
+        return $this->belongsTo('App\Models\Role');
     }
 
     public function roleName(){

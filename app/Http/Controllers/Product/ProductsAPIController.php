@@ -5,34 +5,29 @@ namespace App\Http\Controllers\Product;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\UploadedFile;
 use Helper;
-
-use App\Domain\Product\Actions\UpdateProductAction;
-use App\Domain\Product\Actions\CreateProductAction;
-use App\Domain\Product\Actions\DeleteProductAction;
 
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Requests\Product\CreateProductRequest;
 use App\Http\Requests\Product\DeleteProductRequest;
 use App\Http\Requests\Product\ShowOneProductRequest;
-use App\Http\Requests\General\User\ShowOneUserRequest;
+use App\Http\Requests\User\ShowOneUserRequest;
 
-use App\Http\ViewModels\Product\ShowOneProductVM;
-use App\Http\ViewModels\Product\ShowUserProductsVM;
-use App\Http\ViewModels\Product\ShowProductsIndexVM;
-
-use App\Domain\Product\DTO\ProductDTO;
-use App\Domain\Product\Model\Product;
+use App\Models\Product;
+use App\Models\User;
 
 class ProductsAPIController extends Controller
 {
+    private $perPage = 10;
+    private $path = 'products/image/';
+
     public function index(){
         if(Auth::user()->isAdmin()){
-            $productsData = new ShowProductsIndexVM();
+            $products = Product::orderBy('id','DESC')->with('user')->paginate($this->perPage);
         }
-        else $productsData = new ShowUserProductsVM(Auth::id());
+        else $products = Product::where('user_id', Auth::id())->with('user')->paginate($this->perPage);
 
-        $products = $productsData->toArray();
         $response = Helper::createSuccessResponse($products);
         return response()->json($response);
     }
@@ -40,8 +35,7 @@ class ProductsAPIController extends Controller
     public function userProducts(ShowOneUserRequest $showOneUserRequest)
     {
         $userId = $showOneUserRequest->id;
-        $productsData = new ShowUserProductsVM($userId, false);
-        $products = $productsData->toArray();
+        $products = Product::where('user_id', $userId)->paginate($this->perPage);
         $response = Helper::createSuccessResponse($products);
         return response()->json($response);
     }
@@ -49,16 +43,20 @@ class ProductsAPIController extends Controller
     public function show(ShowOneProductRequest $showOneProductRequest)
     {
         $id = $showOneProductRequest->id;
-        $productData = new ShowOneProductVM($id);
-        $product = $productData->toArray();
+        $product = Product::with(['user'])->find($id);
         $response = Helper::createSuccessResponse($product);
         return response()->json($response);
     }
 
     public function create(CreateProductRequest $createProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($createProductRequest->all());
-        $product = CreateProductAction::execute($productDTO);
+        $data = $createProductRequest->validated();
+
+        if(isset($data['image']) && $data['image'] instanceof UploadedFile){
+            $data['image'] = $this->path . Helper::saveFileGetLinkWithName($data['image'], $this->path)['fileName'];
+        }
+
+        $product = Product::create($data);
 
         $response = Helper::createSuccessResponse($product);
         return response()->json($response);
@@ -67,8 +65,14 @@ class ProductsAPIController extends Controller
 
     public function update(UpdateProductRequest $updateProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($updateProductRequest->all());
-        $product = UpdateProductAction::execute($productDTO);
+        $data = $updateProductRequest->validated();
+
+        if(isset($data['image']) && $data['image'] instanceof UploadedFile){
+            $data['image'] = $this->path . Helper::saveFileGetLinkWithName($data['image'], $this->path)['fileName'];
+        }
+
+        $product = Product::find($data['id']);
+        $result = $product->update($data);
 
         $response = Helper::createSuccessResponse($product);
         return response()->json($response);
@@ -77,10 +81,10 @@ class ProductsAPIController extends Controller
 
     public function destroy(DeleteProductRequest $deleteProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($deleteProductRequest->all());
-        $message = DeleteProductAction::execute($productDTO);
+        $product = Product::find($deleteProductRequest->id);
+        $product->delete();
 
-        $response = Helper::createSuccessResponse($message);
+        $response = Helper::createSuccessResponse('Product Successfully deleted');
         return response()->json($response);
     }
 }

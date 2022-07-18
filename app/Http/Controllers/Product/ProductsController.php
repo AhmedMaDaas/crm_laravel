@@ -5,57 +5,58 @@ namespace App\Http\Controllers\Product;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-
-use App\Domain\Product\Actions\UpdateProductAction;
-use App\Domain\Product\Actions\CreateProductAction;
-use App\Domain\Product\Actions\DeleteProductAction;
+use Illuminate\Http\UploadedFile;
+use Helper;
 
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Requests\Product\CreateProductRequest;
 use App\Http\Requests\Product\DeleteProductRequest;
 use App\Http\Requests\Product\ShowOneProductRequest;
-use App\Http\Requests\General\User\ShowOneUserRequest;
+use App\Http\Requests\User\ShowOneUserRequest;
 
-use App\Http\ViewModels\Product\ShowOneProductVM;
-use App\Http\ViewModels\Product\ShowUserProductsVM;
-use App\Http\ViewModels\Product\ShowProductsIndexVM;
-use App\Http\ViewModels\General\User\ShowUsersIndexVM;
-
-use App\Domain\Product\DTO\ProductDTO;
-use App\Domain\Product\Model\Product;
+use App\Models\Product;
+use App\Models\User;
 
 class ProductsController extends Controller
 {
+    private $perPage = 10;
+    private $path = 'products/image/';
+
     public function index()
     {
         if(Auth::user()->isAdmin()){
-            $products = new ShowProductsIndexVM();
+            $products = Product::orderBy('id','DESC')->with('user')->paginate($this->perPage);
         }
-        else $products = new ShowUserProductsVM(Auth::id());
+        else $products = Product::where('user_id', Auth::id())->with('user')->paginate($this->perPage);
 
-        $data = $products->toArray();
+        $data = ['products' => $products];
         return view('frontend.product.index', $data);
     }
 
     public function userProducts(ShowOneUserRequest $showOneUserRequest)
     {
         $userId = $showOneUserRequest->id;
-        $productsData = new ShowUserProductsVM($userId);
-        $data = $productsData->toArray();
+        $products = Product::where('user_id', $userId)->paginate($this->perPage);
+        $data = ['products' => $products];
         return view('frontend.product.index', $data);
     }
 
     public function create()
     {
-        $users = new ShowUsersIndexVM(false);
-        $data = $users->toArray();
+        $users = User::all();
+        $data = ['users' => $users];
         return view('frontend.product.create', $data);
     }
 
     public function store(CreateProductRequest $createProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($createProductRequest->all());
-        $product = CreateProductAction::execute($productDTO);
+        $data = $createProductRequest->validated();
+
+        if(isset($data['image']) && $data['image'] instanceof UploadedFile){
+            $data['image'] = $this->path . Helper::saveFileGetLinkWithName($data['image'], $this->path)['fileName'];
+        }
+
+        $product = Product::create($data);
 
         if($product){
             request()->session()->flash('success','Successfully added Product');
@@ -70,18 +71,27 @@ class ProductsController extends Controller
     public function edit(ShowOneProductRequest $showOneProductRequest)
     {
         $id = $showOneProductRequest->id;
-        $product = new ShowOneProductVM($id);
-        $users = new ShowUsersIndexVM(false);
-        $data = array_merge($product->toArray(), $users->toArray());
+        $product = Product::with(['user'])->find($id);
+        $users = User::all();
+        $data = [
+            'users' => $users,
+            'product' => $product
+        ];
         return view('frontend.product.edit', $data);
     }
 
     public function update(UpdateProductRequest $updateProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($updateProductRequest->all());
-        $product = UpdateProductAction::execute($productDTO);
+        $data = $updateProductRequest->validated();
 
-        if($product){
+        if(isset($data['image']) && $data['image'] instanceof UploadedFile){
+            $data['image'] = $this->path . Helper::saveFileGetLinkWithName($data['image'], $this->path)['fileName'];
+        }
+
+        $product = Product::find($data['id']);
+        $result = $product->update($data);
+
+        if($result){
             request()->session()->flash('success','Successfully updated');
         }
         else{
@@ -93,15 +103,10 @@ class ProductsController extends Controller
 
     public function destroy(DeleteProductRequest $deleteProductRequest)
     {
-        $productDTO = ProductDTO::fromRequest($deleteProductRequest->all());
-        $message = DeleteProductAction::execute($productDTO);
+        $product = Product::find($deleteProductRequest->id);
+        $product->delete();
 
-        if($message){
-            request()->session()->flash('success','Product Successfully deleted');
-        }
-        else{
-            request()->session()->flash('error','There is an error while deleting Products');
-        }
+        request()->session()->flash('success','Product Successfully deleted');
         return redirect()->route('product.index');
     }
 }

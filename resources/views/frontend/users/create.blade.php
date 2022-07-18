@@ -32,8 +32,8 @@
         </div>
 
         <div class="form-group">
-            <label for="inputEmail" class="col-form-label">Phone</label>
-          <input id="inputEmail" type="text" name="phone" placeholder="Enter phone"  value="{{old('phone')}}" class="form-control">
+            <label for="inputPhone" class="col-form-label">Phone</label>
+          <input id="inputPhone" type="text" name="phone" placeholder="Enter phone"  value="{{old('phone')}}" class="form-control">
           @error('phone')
           <span class="text-danger">{{$message}}</span>
           @enderror
@@ -55,10 +55,10 @@
                 <i class="fa fa-picture-o"></i> Choose
                 </a>
             </span>
-            <input id="thumbnail" class="form-control" type="text" name="photo" value="{{old('photo')}}">
+            <input id="thumbnail" class="form-control" type="text" name="avatar" value="{{old('avatar')}}">
         </div>
         <img id="holder" style="margin-top:15px;max-height:100px;">
-          @error('photo')
+          @error('avatar')
           <span class="text-danger">{{$message}}</span>
           @enderror
         </div>
