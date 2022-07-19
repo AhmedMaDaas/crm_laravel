@@ -34,7 +34,6 @@ class StringOrImage implements Rule
     }
 
     private function checkFileExists($path){
-        if(str_starts_with($path, 'http') && !str_starts_with($path, url('/'))) return true;
         if(str_starts_with($path, url('/'))){
            $path = str_replace(url('/'), '', $path);
            return file_exists(public_path($path));
